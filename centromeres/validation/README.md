@@ -62,3 +62,15 @@ python collapse_consecutive_positions.py centromere_mutations.tsv centromere_mut
     - Reference nucleotide(s) or gap ('-')
     - Alternate position
     - Alternate nucleotide(s) or gap ('-')
+
+### 3. `create_igv_batch.py`
+Generate an IGV batch mode script to automatically visualize centromere mutation regions
+
+- **Arguments**:
+    - `<config.yaml>` – YAML configuration file specifying paths and parameters
+
+```bash
+# Usage
+python create_igv_batch.py <config.yaml>
+# Example
+python create_igv_batch.py batch_igv_config.yaml
