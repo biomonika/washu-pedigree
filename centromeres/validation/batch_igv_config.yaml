@@ -1,0 +1,12 @@
+# IGV Screenshot Configuration
+paths:
+  genome_fasta: "/storage/plzen1/home/kratka/trio/assemblies/PAN011.diploid.fasta"
+  bam_file: "https://public.gi.ucsc.edu/~mcechova/polished/PAN011_HiFi.hifi_minimap2_2.28.corrected.bam"
+  problematic_file: "https://public.gi.ucsc.edu/~mcechova/polished/annotations/problematic.PAN011.bed"
+  regions_file: "/storage/plzen1/home/kratka/trio/regions/PAN011_regions.bed"
+  output_dir: "/storage/plzen1/home/kratka/trio/blood"
+  script_file: "/storage/plzen1/home/kratka/trio/scripts/igv_screenshot_script_PAN011.txt"
+
+igv_settings:
+  window_padding: 50  # bp to add on each side
+  max_panel_height: 2000
