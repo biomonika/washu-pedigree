@@ -42,6 +42,11 @@ def check_sequences(sequence_name, seq1_data, seq2_data, found_start, buffer):
     line_len, line_len_curr = 0, 0
     line_mismatches, line_gaps = 0, 0
     for a, b in zip(seq1_chunk, seq2_chunk):
+        if a != "-":
+            p1 += 1
+        if b != "-":
+            p2 += 1
+
         if not found_start:
             if a in ("A", "C", "G", "T") and b in ("A", "C", "G", "T"):
                 found_start = True
@@ -49,11 +54,6 @@ def check_sequences(sequence_name, seq1_data, seq2_data, found_start, buffer):
                 continue
 
         line_len_curr += 1
-
-        if a != "-":
-            p1 += 1
-        if b != "-":
-            p2 += 1
 
         if a != b:
             buffer.append(f"{sequence_name}\t{p1 if a != '-' else '-'}\t{a}\t{b}\t{p2 if b != '-' else '-'}\n")
