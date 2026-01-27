@@ -1,0 +1,10 @@
+#use this together with the R script centromere_positioning.Rnw
+#run the code below after running the first chunk in R
+
+cat CDR.positioning.PAN010.diploid.txt | grep -v "^haplotype" | paste - - >CDR.positioningTable.PAN010.txt
+
+cat CDR.positioning.PAN011.diploid.txt | grep -v "^haplotype" | paste - - >CDR.positioningTable.PAN011.txt
+
+cat CDR.positioning.PAN027.diploid.txt | grep -v "^haplotype" | paste - - >CDR.positioningTable.PAN027.txt
+
+cat CDR.positioning.PAN028.diploid.txt | grep -v "^haplotype" | paste - - >CDR.positioningTable.PAN028.txt

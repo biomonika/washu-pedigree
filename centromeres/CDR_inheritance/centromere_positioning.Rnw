@@ -1,0 +1,443 @@
+\documentclass{article}
+
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+
+<<>>=
+
+#CALCULATE CDR STATS FOR ALL THE SAMPLES
+
+library(dplyr)
+library(stringr)
+
+setwd("/Users/mcechova/Desktop/CDR/CDR_positioning")
+
+avg_midpos_by_haplotype <- function(bedfile) {
+  df <- read.table(bedfile, header = FALSE, stringsAsFactors = FALSE) %>%
+    setNames(c("haplotype","start","end","name","V5","V6","V7","V8","color")) %>%
+    mutate(
+      len = end - start,
+      mid = (start + end) / 2
+    ) %>%
+    group_by(haplotype)
+  
+  df %>%
+    group_by(haplotype) %>%
+    summarise(
+      midPoint = round(((max(end)-min(start))/2)+min(start)),
+      #CDRposition = round(mean(mid[len == max(len)])),  # mean of the longest interval(s)
+      CDR_length  = sum(end - start),                   # sum of all differences (small number)
+      .groups = "drop")
+}
+
+#samples <- c("PAN010", "PAN011", "PAN027", "PAN028", "HG002")
+samples <- c("PAN010", "PAN011", "PAN027", "PAN028")
+
+for (s in samples) {
+  # CDRs
+  CDRs <- avg_midpos_by_haplotype(paste0("centrodip.MDR.", s, ".filtered.minL3k.bed")) #load bed files after outlier removal
+  
+  # active HOR
+  active_HOR <- read.table(paste0(s, ".polished.cenSat.active_hor.bed"),
+                           header = FALSE,
+                           stringsAsFactors = FALSE)
+  colnames(active_HOR) <- c("haplotype","start","end","name","V5","V6","V7","V8","color")
+  
+  # haplotype ranges
+  haplotype_ranges <- active_HOR %>%
+    group_by(haplotype) %>%
+    summarise(
+      start = min(start),
+      end   = max(end),
+      .groups = "drop"
+    )
+  
+  # combine active HOR ranges with CDR positioning
+  df <- merge(haplotype_ranges, CDRs)
+  
+  df$dist_frac <- (df$midPoint - df$start) / (df$end - df$start)
+  
+  df <- df %>%
+    mutate(
+      location = case_when(
+        dist_frac < 1/3 ~ "p",
+        dist_frac < 2/3 ~ "center",
+        TRUE            ~ "q"
+      ),
+      chromosome = str_extract(haplotype, "chr[0-9XYM]+")
+    ) %>%
+    group_by(chromosome) %>%
+    mutate(location_match = n_distinct(location) == 1) %>%
+    ungroup()
+  
+  # per-haplotype output
+  write.table(
+    df,
+    paste0("CDR.positioning.", s, ".diploid.txt"),
+    sep = "\t", quote = FALSE, row.names = FALSE
+  )
+  
+  # per-chromosome summary
+  chrom_loc_df <- df %>%
+    group_by(chromosome) %>%
+    summarise(locations = paste(sort(location), collapse = ","), .groups = "drop")
+  
+  write.table(
+    chrom_loc_df,
+    paste0("CDR.perChromosome.", s, ".diploid.txt"),
+    sep = "\t", quote = FALSE, row.names = FALSE
+  )
+}
+
+@
+
+<<>>=
+#LOAD THE EXPORTED TABLE
+#THIS TABLE CONTAINS A SINGLE CHROMOSOME PER LINE
+#RUN THIS FOR PAN027 or HG002 using the individual variable
+library(dplyr)
+library(ggplot2)
+
+#individual_name<-"HG002"
+individual_name<-"PAN027"
+
+#before using this, make sure the table exists
+
+# Read data
+individual <- as.data.frame(read.table(paste0("CDR.positioningTable.",individual_name,".txt"), header = FALSE))
+colnames(individual)<-c("haplotype1","start1","end1","midPoint1","CDRlength1","dist_frac1","location1","chr1","matching1","haplotype2","start2","end2","midPoint2","CDRlength2","dist_frac2","location2","chr2","matching2")
+
+#chromosomes must match other than the sex chromosomes
+  stopifnot(
+  all(
+    individual$chr1 == individual$chr2 |
+    (individual$chr1 == "chrX" & individual$chr2 == "chrY") |
+    (individual$chr1 == "chrY" & individual$chr2 == "chrX")
+  ))
+##assign maternal and paternal chromosomes
+individual <- individual %>%
+  mutate(lineage1 = str_extract(haplotype1, "(maternal|paternal)"))
+individual <- individual %>%
+  mutate(lineage2 = str_extract(haplotype2, "(maternal|paternal)"))
+
+# Filter cases where one haplotype is 'p' and the other is 'q'
+p_q <- individual %>%
+  filter((location1 == "p" & location2 == "q") |
+         (location1 == "q" & location2 == "p"))
+
+#optionally drop chr4
+#individual <- individual %>%
+#  filter(chr1 != "chr4")
+@
+
+
+<<>>=
+
+library(dplyr)
+library(ggplot2)
+library(grDevices)
+
+## ---- Prepare data ---------------------------------------------------------
+
+# Define chromosome order: chr1 → chr22 → chrX
+chr_levels <- paste0("chr", c(1:22, "X"))
+individual <- individual %>%
+  mutate(
+    chr1 = factor(chr1, levels = chr_levels)
+  )
+
+maternal_col <- adjustcolor("#663366", alpha.f = 0.25)
+paternal_col <- adjustcolor("#DDC077", alpha.f = 0.25)
+
+## ---- Plot -----------------------------------------------------------------
+
+ggplot(individual) +
+  # Background thirds (color-blind friendly grays)
+  annotate("rect", xmin = 0,     xmax = 1/3, ymin = -Inf, ymax = Inf,
+           fill = "#e8e8e8", alpha = 1) +
+  annotate("rect", xmin = 1/3,   xmax = 2/3, ymin = -Inf, ymax = Inf,
+           fill = "#cccccc", alpha = 1) +
+  annotate("rect", xmin = 2/3,   xmax = 1,   ymin = -Inf, ymax = Inf,
+           fill = "#e8e8e8", alpha = 1) +
+
+  # Thin white vertical dividers
+  geom_vline(xintercept = c(1/3, 2/3),
+             colour = "white",
+             linewidth = 0.4) +
+
+  # Labels ABOVE the plot
+  annotate("text", x = 1/6, y = Inf, vjust = -0.5,
+           label = "p-arm proximal", size = 6) +
+  annotate("text", x = 0.5, y = Inf, vjust = -0.5,
+           label = "center", size = 6) +
+  annotate("text", x = 5/6, y = Inf, vjust = -0.5,
+           label = "q-arm proximal", size = 6) +
+
+  # Segments connecting dist_frac1 to dist_frac2
+  geom_segment(
+    aes(x = dist_frac1, xend = dist_frac2,
+        y = chr1, yend = chr1, colour = "black"),
+    size = 0.7, lineend = "round"
+  ) +
+
+  # Points at both ends
+  geom_point(
+    aes(x = dist_frac1, y = chr1, size = CDRlength1, colour = lineage1),
+    alpha = 0.95
+  ) +
+  geom_point(
+    aes(x = dist_frac2, y = chr1, size = CDRlength2, colour = lineage2),
+    alpha = 0.95
+  ) +
+
+  # Scales
+  scale_x_continuous(limits = c(0, 1), expand = expansion(mult = 0.01)) +
+  scale_color_manual(
+    values = c(maternal = maternal_col, paternal = paternal_col),
+    name = "Lineage"
+  ) +
+  scale_size_area(
+    name = "CDR size (bp)",
+    max_size = 7,
+    limits = c(20000, 250000)
+  ) +
+
+  # Reverse y-axis so chr1 is at top
+  scale_y_discrete(limits = rev(levels(individual$chr1))) +
+
+  # Labels & theme
+  labs(
+    x = "Relative position on the active HOR",
+    y = "Chromosome",
+    title = ""
+  ) +
+  theme_minimal(base_size = 15) +  # increased base font size
+  theme(
+    panel.grid.major.y = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.grid.major.x = element_line(linewidth = 0.2),
+    axis.title.y = element_text(margin = margin(r = 8), size = 16),
+    axis.title.x = element_text(margin = margin(t = 8), size = 16),
+    axis.text.y = element_text(face = "bold", size = 14),
+    axis.text.x = element_text(size = 13),
+    legend.title = element_text(size = 14, face = "bold"),
+    legend.text = element_text(size = 13),
+    plot.title = element_text(face = "bold", margin = margin(b = 10, t = 20), size = 18),
+    legend.position = "right",
+    plot.margin = margin(40, 16, 18, 12),
+    plot.title.position = "plot"
+  ) +
+  coord_cartesian(clip = "off")
+
+ggsave(
+  filename = paste0(individual_name,".diploid.CDRstats.png"),  # or ".tiff" for print-quality
+  plot = last_plot(),            # or replace with your plot object, e.g., plot = p
+  width = 25,                     # 1/3 of journal width in cm
+  height = 18,                    # make it square or adjust as needed
+  units = "cm",
+  dpi = 300
+)
+
+@
+
+<<>>=
+#RUN STATS FOR THE PAPER
+
+#total p, q, and center statistics
+print(sort(table(c(individual$location1,individual$location2))))
+
+#diploid statistics
+pair <- apply(individual[, c("location1", "location2")], 1, function(x) {
+  paste(sort(x), collapse = " ")
+})
+
+print(sort(table(sort(pair))))
+
+tbl <- table(pair)
+stopifnot(sum(tbl) == 23)
+@
+
+<<subCDR sum stats>>=
+library(dplyr)
+#take filtered subCDRs, and sum up their lengths
+base_dir <- "/Users/mcechova/Desktop/CDR/CDR_positioning"
+
+samples <- c("PAN010", "PAN011", "PAN027", "PAN028")
+
+process_sample <- function(sample) {
+  file <- file.path(
+    base_dir,
+    paste0("centrodip.MDR.", sample, ".filtered.minL3k.bed")
+  )
+  
+  df <- read.table(file, sep = "\t", header = FALSE, stringsAsFactors = FALSE)
+  
+  df %>%
+    mutate(length = V3 - V2) %>%
+    group_by(V1) %>%
+    summarise(total_length = sum(length), .groups = "drop") %>%
+    rename(chromosome = V1) %>%
+    mutate(sample = sample)
+}
+
+#This is the total sum of subCDRs across the four pedigree individuals
+allsubCDRs <- bind_rows(lapply(samples, process_sample))
+print(quantile(allsubCDRs$total_length, c(0.25, 0.75)))
+
+@
+
+
+<<>>=
+# LOAD THE EXPORTED TABLE
+# THIS SCRIPT RUNS THE SAME ANALYSIS FOR PAN010, PAN011, PAN028
+library(dplyr)
+library(ggplot2)
+library(stringr)
+
+# Define chromosome order: chr1 → chr22 → chrX
+chr_levels <- paste0("chr", c(1:22, "X"))
+
+# Samples to process
+samples <- c("PAN010", "PAN011", "PAN028")
+
+for (sid in samples) {
+
+  # ------------------ LOAD & PREP DATA ------------------
+
+  df <- as.data.frame(
+    read.table(paste0("CDR.positioningTable.", sid, ".txt"), header = FALSE)
+  )
+
+  colnames(df) <- c(
+    "haplotype1","start1","end1","midPoint1","CDRlength1","dist_frac1","location1","chr1","matching1",
+    "haplotype2","start2","end2","midPoint2","CDRlength2","dist_frac2","location2","chr2","matching2"
+  )
+
+  stopifnot(
+  all(
+    df$chr1 == df$chr2 |
+    (df$chr1 == "chrX" & df$chr2 == "chrY") |
+    (df$chr1 == "chrY" & df$chr2 == "chrX")
+  )
+)
+
+
+  ## assign haplotype1 and haplotype2 (instead of maternal/paternal)
+  df <- df %>%
+    mutate(
+      lineage1 = str_extract(haplotype1, "(haplotype1|haplotype2)"),
+      lineage2 = str_extract(haplotype2, "(haplotype1|haplotype2)")
+    )
+
+  # Filter cases where one haplotype is 'p' and the other is 'q'
+  p_q <- df %>%
+    filter(
+      (location1 == "p" & location2 == "q") |
+      (location1 == "q" & location2 == "p")
+    )
+
+  # ------------------ PLOT ------------------
+
+  df <- df %>%
+    mutate(
+      chr1 = factor(chr1, levels = chr_levels)
+    )
+  
+  minCDRsize<-min(sort(c(df$CDRlength1,df$CDRlength2)))
+  maxCDRsize<-max(sort(c(df$CDRlength1,df$CDRlength2)))
+
+  p <- ggplot(df) +
+    # Background thirds (color-blind friendly grays)
+    annotate("rect", xmin = 0,     xmax = 1/3, ymin = -Inf, ymax = Inf,
+             fill = "#e8e8e8", alpha = 1) +
+    annotate("rect", xmin = 1/3,   xmax = 2/3, ymin = -Inf, ymax = Inf,
+             fill = "#cccccc", alpha = 1) +
+    annotate("rect", xmin = 2/3,   xmax = 1,   ymin = -Inf, ymax = Inf,
+             fill = "#e8e8e8", alpha = 1) +
+
+    # Thin white vertical dividers
+    geom_vline(xintercept = c(1/3, 2/3),
+               colour = "white",
+               linewidth = 0.4) +
+
+    # Labels ABOVE the plot
+    annotate("text", x = 1/6, y = Inf, vjust = -0.5,
+             label = "p-arm proximal", size = 6) +
+    annotate("text", x = 0.5, y = Inf, vjust = -0.5,
+             label = "center", size = 6) +
+    annotate("text", x = 5/6, y = Inf, vjust = -0.5,
+             label = "q-arm proximal", size = 6) +
+
+    # Segments connecting dist_frac1 to dist_frac2
+    geom_segment(
+      aes(x = dist_frac1, xend = dist_frac2,
+          y = chr1, yend = chr1, colour = "black"),
+      size = 0.7, lineend = "round"
+    ) +
+
+    # Points at both ends
+    geom_point(
+      aes(x = dist_frac1, y = chr1, size = CDRlength1, colour = lineage1),
+      alpha = 0.95
+    ) +
+    geom_point(
+      aes(x = dist_frac2, y = chr1, size = CDRlength2, colour = lineage2),
+      alpha = 0.95
+    ) +
+
+    # Scales
+    scale_x_continuous(limits = c(0, 1), expand = expansion(mult = 0.01)) +
+    scale_color_manual(
+      values = c(
+        haplotype1 = "#663366",  # purple
+        haplotype2 = "#DDC077"   # gold
+      ),
+      name = "Lineage"
+    ) +
+    scale_size_area(
+      name = "CDR size (bp)",
+      max_size = 7,
+      limits = c(minCDRsize, maxCDRsize)
+    ) +
+
+    # Reverse y-axis so chr1 is at top
+    scale_y_discrete(limits = rev(levels(df$chr1))) +
+
+    # Labels & theme
+    labs(
+      x = "Relative position on the active HOR",
+      y = "Chromosome",
+      title = ""
+    ) +
+    theme_minimal(base_size = 15) +
+    theme(
+      panel.grid.major.y = element_blank(),
+      panel.grid.minor = element_blank(),
+      panel.grid.major.x = element_line(linewidth = 0.2),
+      axis.title.y = element_text(margin = margin(r = 8), size = 16),
+      axis.title.x = element_text(margin = margin(t = 8), size = 16),
+      axis.text.y = element_text(face = "bold", size = 14),
+      axis.text.x = element_text(size = 13),
+      legend.title = element_text(size = 14, face = "bold"),
+      legend.text = element_text(size = 13),
+      plot.title = element_text(face = "bold", margin = margin(b = 10, t = 20), size = 18),
+      legend.position = "right",
+      plot.margin = margin(40, 16, 18, 12),
+      plot.title.position = "plot"
+    ) +
+    coord_cartesian(clip = "off")
+
+  # Save per-sample figure
+  ggsave(
+    filename = paste0(sid, ".diploid.CDRstats.png"),
+    plot = p,
+    width = 25,
+    height = 18,
+    units = "cm",
+    dpi = 300
+  )
+}
+
+@
+
+\end{document}
