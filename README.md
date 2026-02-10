@@ -6,6 +6,12 @@ The code is organized by the biological regions of interest.
 
 The annotations will be located either directly in the folder "annotations", or linked from within.
 
+UCSC genome browser HUB files:
+[PAN010 v1.1 hub](https://public.gi.ucsc.edu/~mcechova/pedigree/browser/v1.1/PAN010/PAN010.hub.txt)
+[PAN011 v1.1 hub](https://public.gi.ucsc.edu/~mcechova/pedigree/browser/v1.1/PAN011/PAN011.hub.txt)
+[PAN027 v1.1 hub](https://public.gi.ucsc.edu/~mcechova/pedigree/browser/v1.1/PAN027/PAN027.hub.txt)
+[PAN028 v1.1 hub](https://public.gi.ucsc.edu/~mcechova/pedigree/browser/v1.1/PAN028/PAN028.hub.txt)
+
 The individual assembly versions are described below:
 
 **v1.0 assemblies**
