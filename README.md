@@ -40,3 +40,9 @@ Assemblies after pedigree-based polishing (PAN027) and imprinting-based phasing.
 | [PAN010 haplotype1](https://public.gi.ucsc.edu/~mcechova/pedigree/assemblies/v1.2/PAN010_hap1.polished.v1.2.fasta) | [PAN011 haplotype1](https://public.gi.ucsc.edu/~mcechova/pedigree/assemblies/v1.2/PAN011_hap1.polished.v1.2.fasta) | [PAN027 maternal](https://public.gi.ucsc.edu/~mcechova/pedigree/assemblies/v1.2/PAN027_hap1.polished.v1.2.fasta) | [PAN028 haplotype1](https://public.gi.ucsc.edu/~mcechova/pedigree/assemblies/v1.2/PAN028_hap1.polished.v1.2.fasta) |
 | [PAN010 haplotype2](https://public.gi.ucsc.edu/~mcechova/pedigree/assemblies/v1.2/PAN010_hap2.polished.v1.2.fasta) | [PAN011 haplotype2](https://public.gi.ucsc.edu/~mcechova/pedigree/assemblies/v1.2/PAN011_hap2.polished.v1.2.fasta) | [PAN027 paternal](https://public.gi.ucsc.edu/~mcechova/pedigree/assemblies/v1.2/PAN027_hap2.polished.v1.2.fasta) | [PAN028 haplotype2](https://public.gi.ucsc.edu/~mcechova/pedigree/assemblies/v1.2/PAN028_hap2.polished.v1.2.fasta) |
 
+**rDNA assemblies**
+Chromosome 14 maternal (active) and paternal (inactive) rDNA arrays.
+
+| maternal rDNA array | paternal rDNA array | 
+|:----------|:----------|
+| [chr14 maternal](https://public.gi.ucsc.edu/~mcechova/pedigree/assemblies/rDNA/PAN027.rDNA.chr14.maternal.ref.fa) | [chr14 paternal](https://public.gi.ucsc.edu/~mcechova/pedigree/assemblies/rDNA/PAN027.rDNA.chr14.paternal.ref.fa) | 
