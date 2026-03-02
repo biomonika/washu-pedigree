@@ -40,6 +40,9 @@ Assemblies after pedigree-based polishing (PAN027) and imprinting-based phasing.
 | [PAN010 haplotype1](https://public.gi.ucsc.edu/~mcechova/pedigree/assemblies/v1.2/PAN010_hap1.polished.v1.2.fasta) | [PAN011 haplotype1](https://public.gi.ucsc.edu/~mcechova/pedigree/assemblies/v1.2/PAN011_hap1.polished.v1.2.fasta) | [PAN027 maternal](https://public.gi.ucsc.edu/~mcechova/pedigree/assemblies/v1.2/PAN027_hap1.polished.v1.2.fasta) | [PAN028 haplotype1](https://public.gi.ucsc.edu/~mcechova/pedigree/assemblies/v1.2/PAN028_hap1.polished.v1.2.fasta) |
 | [PAN010 haplotype2](https://public.gi.ucsc.edu/~mcechova/pedigree/assemblies/v1.2/PAN010_hap2.polished.v1.2.fasta) | [PAN011 haplotype2](https://public.gi.ucsc.edu/~mcechova/pedigree/assemblies/v1.2/PAN011_hap2.polished.v1.2.fasta) | [PAN027 paternal](https://public.gi.ucsc.edu/~mcechova/pedigree/assemblies/v1.2/PAN027_hap2.polished.v1.2.fasta) | [PAN028 haplotype2](https://public.gi.ucsc.edu/~mcechova/pedigree/assemblies/v1.2/PAN028_hap2.polished.v1.2.fasta) |
 
+**Panpatch**  
+[Panpatch bed files and log files](https://public.gi.ucsc.edu/~mcechova/pedigree/assemblies/panpatch/panpatch.v0.2.zip)
+
 **rDNA assemblies**
 Chromosome 14 maternal (active) and paternal (inactive) rDNA arrays.
 
