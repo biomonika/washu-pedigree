@@ -1,0 +1,3 @@
+PAN028.chr4.haplotype2	Col	64000
+PAN028.chr8.haplotype1	Col	48000
+PAN028.chr17.haplotype1	Dup	106000

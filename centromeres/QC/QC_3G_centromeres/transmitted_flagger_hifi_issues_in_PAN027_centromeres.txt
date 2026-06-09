@@ -1,0 +1,3 @@
+PAN027.chr4.paternal	Col	92943
+PAN027.chr21.paternal	Col	32000
+PAN027.chr22.paternal	Col	3568
