@@ -271,6 +271,9 @@ Assemblies polished with both PacBio HiFi from blood and the Element AVITI Biosc
 **v1.2 assemblies**
 Assemblies after pedigree-based polishing (PAN027) and imprinting-based phasing.
 
+_Important note:_ 
+the _maternal_ and _paternal_ description refers to the origin of the chromosome, that is, whether it was inherited from the mother or father. For the mother (PAN027) it refers to the maternal origin (PAN010) or the paternal origin (PAN011). For PAN028, it refers to the maternal origin (PAN027) or the paternal origin (individual outside of this pedigree). For PAN010 and PAN011, we can also phase these assemblies, despite parents of PAN010 and PAN011 not being part of the pedigree (PAN010 and PAN011 are the oldest members of the family). Therefore, _maternal_ in PAN010 means that the chromosome was inherited from the mother of PAN010, and _paternal_ in PAN010 means that the chromosome was inherited from the father of PAN010. Similar logic applies to PAN011. 
+
 | PAN010 | PAN011 | PAN027 | PAN028 |
 |:----------|:----------|:----------|:----------|
 | [PAN010 haplotype1](https://public.gi.ucsc.edu/~mcechova/pedigree/assemblies/v1.2/PAN010_hap1.polished.v1.2.fasta) | [PAN011 haplotype1](https://public.gi.ucsc.edu/~mcechova/pedigree/assemblies/v1.2/PAN011_hap1.polished.v1.2.fasta) | [PAN027 maternal](https://public.gi.ucsc.edu/~mcechova/pedigree/assemblies/v1.2/PAN027_hap1.polished.v1.2.fasta) | [PAN028 haplotype1](https://public.gi.ucsc.edu/~mcechova/pedigree/assemblies/v1.2/PAN028_hap1.polished.v1.2.fasta) |
