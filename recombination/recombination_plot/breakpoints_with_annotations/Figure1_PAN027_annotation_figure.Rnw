@@ -1,0 +1,320 @@
+\documentclass{article}
+
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+
+<<>>=
+
+# Plot the annotations for chromosome-level visualization
+# of meiotic recombination breakpoints, ancestry, 
+# and repeats/satellites (cenSat annotation track)
+
+setwd("/Users/mcechova/Desktop/pedigree/PAN027_annotations")
+
+library(karyoploteR)
+library(GenomicRanges)
+
+haps <- c("maternal", "paternal")
+
+for(hap in haps) {
+
+  required_files <- c(
+    paste0(hap, ".genome.txt"),
+    paste0("PAN027.", hap, ".cenSat.bed"),
+    paste0("PAN027.ancestry.", hap, ".bed"),
+    paste0(hap, ".breakpoints.merged.bed"),
+    paste0("variantcalling_recombination_",hap,".tsv")
+  )
+
+  missing_files <- required_files[!file.exists(required_files)]
+
+  if(length(missing_files) > 0) {
+    stop(
+      paste0(
+        "Missing files for ", hap, ":\n",
+        paste(missing_files, collapse = "\n")
+      )
+    )
+  }
+
+  png(
+    paste0(
+      "/Users/mcechova/Desktop/pedigree/figures/auxiliary_files_Figure1/",
+      "Figure1_20260611_", hap, ".png"
+    ),
+    width = 2325,
+    height = 2412,
+    res = 300
+  )
+
+  # Load custom genome file (chromosome lengths)
+  genome <- read.table(
+    paste0(hap, ".genome.txt"),
+    header = FALSE,
+    sep = "\t",
+    stringsAsFactors = FALSE
+  )
+
+  colnames(genome) <- c("chromosome", "length")
+
+  # Create a GRanges object with ranges from 1 to chromosome length
+  custom_genome <- GRanges(
+    seqnames = genome$chromosome,
+    ranges = IRanges(
+      start = rep(1, nrow(genome)),
+      end = genome$length
+    )
+  )
+
+  # Load BED file for the censat annotation track
+  censat_data <- read.table(
+    paste0("PAN027.", hap, ".cenSat.bed"),
+    header = FALSE,
+    sep = "\t",
+    stringsAsFactors = FALSE
+  )
+
+  colnames(censat_data) <- c(
+    "chromosome", "start", "end", "name",
+    "score", "strand", "thickStart",
+    "thickEnd", "color"
+  )
+
+  # Load BED file for the ancestry analysis
+  ancestry_data <- read.table(
+    paste0("PAN027.ancestry.", hap, ".bed"),
+    header = FALSE,
+    sep = "\t",
+    stringsAsFactors = FALSE
+  )
+
+  colnames(ancestry_data) <- c(
+    "chromosome", "start", "end",
+    "name", "score"
+  )
+
+  # Generate a color column with a gradient
+  ancestry_dark  <- rgb(92, 174, 99, maxColorValue = 255)
+  ancestry_light <- rgb(217, 241, 213, maxColorValue = 255)
+
+  color_function <- colorRamp(
+    c(ancestry_light, ancestry_dark)
+  )
+
+  # Load BED file for the meiotic recombination breakpoints
+  breakpoints_data <- read.table(
+    paste0(hap, ".breakpoints.merged.bed"),
+    header = FALSE,
+    sep = "\t",
+    stringsAsFactors = FALSE,
+    comment.char = ""
+  )
+
+  colnames(breakpoints_data) <- c(
+    "chromosome", "start", "end", "color"
+  )
+
+  haplotype_maternal_dark  <- rgb(152, 110, 172, maxColorValue = 255)
+  haplotype_maternal_light <- rgb(229, 212, 232, maxColorValue = 255)
+  haplotype_paternal_dark  <- rgb(221, 192, 119, maxColorValue = 255)
+  haplotype_paternal_light <- rgb(221, 217, 191, maxColorValue = 255)
+
+  
+  
+  # replace the colors for the maternal/paternal haplotype
+  if (hap == "maternal") {
+    haplotype_dark  <- haplotype_maternal_dark
+    haplotype_light <- haplotype_maternal_light
+    
+  } else if (hap == "paternal") {
+    haplotype_dark  <- haplotype_paternal_dark
+    haplotype_light <- haplotype_paternal_light
+    
+  } else {
+    stop(paste("Unknown haplotype:", hap))
+    
+  }
+  
+  # replace the colors for the haplotype blocks
+  breakpoints_data$color[breakpoints_data$color == "#9EE2BF"] <-
+    haplotype_dark
+  
+  breakpoints_data$color[breakpoints_data$color == "#6495EC"] <-
+    haplotype_light
+  
+  # Load variant-calling recombination breakpoints
+  vc_breakpoints <- read.table(
+    paste0("variantcalling_recombination_", hap, ".tsv"),
+    header = FALSE,
+    sep = "\t",
+    stringsAsFactors = FALSE
+  )
+  
+  colnames(vc_breakpoints) <-
+    c("chromosome", "start", "end", "type")
+  
+  # Convert chr01 -> chr1, chr02 -> chr2, ...
+  vc_breakpoints$chromosome <-
+    sub("^chr0+", "chr", vc_breakpoints$chromosome)
+  
+  regions_vc_breakpoints <- GRanges(
+    seqnames = vc_breakpoints$chromosome,
+    ranges = IRanges(start = vc_breakpoints$start,
+                     end = vc_breakpoints$end)
+  )
+
+  # Apply the color function to the scores
+  ancestry_data$color <- sapply(
+    ancestry_data$score,
+    function(score) {
+
+      score <- max(0, min(1, score))
+
+      rgb_values <- color_function(score)
+
+      rgb(
+        rgb_values[1],
+        rgb_values[2],
+        rgb_values[3],
+        maxColorValue = 255
+      )
+    }
+  )
+
+  # Convert color to RGB
+  censat_data$color <- apply(
+    do.call(
+      rbind,
+      strsplit(censat_data$color, ",")
+    ),
+    1,
+    function(rgb)
+      rgb(
+        as.numeric(rgb[1]),
+        as.numeric(rgb[2]),
+        as.numeric(rgb[3]),
+        maxColorValue = 255
+      )
+  )
+
+  # Plotting
+  kp <- plotKaryotype(
+    genome = custom_genome,
+    chromosomes = "all",
+    plot.type = 2,
+    cytobands = NULL,
+    cex = 1,
+    labels.plotter = NULL,
+    ideogram.plotter = NULL
+  )
+
+  kpAddChromosomeNames(
+    kp,
+    cex = 1,
+    srt = 0,
+    col = "black",
+    xoffset = 0.01
+  )
+
+  # add background color
+  kpDataBackground(
+    kp,
+    data.panel = 1,
+    color = "mintcream",
+    r0 = -0.1,
+    r1 = 0.2
+  )
+
+  kpDataBackground(
+    kp,
+    data.panel = 1,
+    color = "mintcream",
+    r0 = 0.3,
+    r1 = 0.9
+  )
+
+  kpDataBackground(
+    kp,
+    data.panel = 2,
+    color = "gray",
+    r0 = 0.0,
+    r1 = 0.3
+  )
+
+  regions_censat <- GRanges(
+    seqnames = censat_data$chromosome,
+    ranges = IRanges(
+      start = censat_data$start,
+      end = censat_data$end
+    )
+  )
+
+  regions_ancestry <- GRanges(
+    seqnames = ancestry_data$chromosome,
+    ranges = IRanges(
+      start = ancestry_data$start,
+      end = ancestry_data$end
+    )
+  )
+
+  regions_breakpoints <- GRanges(
+    seqnames = breakpoints_data$chromosome,
+    ranges = IRanges(
+      start = breakpoints_data$start,
+      end = breakpoints_data$end
+    )
+  )
+
+  # Plot regions with the corresponding colors
+  kpPlotRegions(
+    kp,
+    data = regions_ancestry,
+    col = ancestry_data$color,
+    border = NA,
+    data.panel = 1,
+    r0 = -0.1,
+    r1 = 0.2,
+    avoid.overlapping = FALSE
+  )
+
+  kpPlotRegions(
+    kp,
+    data = regions_breakpoints,
+    col = breakpoints_data$color,
+    border = NA,
+    data.panel = 1,
+    r0 = 0.3,
+    r1 = 0.9,
+    avoid.overlapping = TRUE
+  )
+  
+  kpPoints(
+    kp,
+    chr = as.character(seqnames(regions_vc_breakpoints)),
+    x = start(regions_vc_breakpoints),
+    y = rep(1, length(regions_vc_breakpoints)),
+    data.panel = 1,
+    pch = 25,
+    cex = 0.4,
+    col = "black",
+    bg = adjustcolor("black", alpha.f = 0.75)
+  )
+
+  kpPlotRegions(
+    kp,
+    data = regions_censat,
+    col = "black",
+    border = NA,
+    data.panel = 2,
+    r0 = 0.0,
+    r1 = 0.3,
+    avoid.overlapping = FALSE
+  )
+
+  dev.off()
+
+  cat("Finished:", hap, "\n")
+}
+@
+
+\end{document}

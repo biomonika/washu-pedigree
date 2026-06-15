@@ -1,0 +1,2 @@
+PAN027.chr4.maternal	Col	6352
+PAN027.chr10.paternal	Col	16000

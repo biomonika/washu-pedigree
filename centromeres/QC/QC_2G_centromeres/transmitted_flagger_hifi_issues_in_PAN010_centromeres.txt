@@ -1,0 +1,2 @@
+PAN010.chr4.haplotype1	Col	5596
+PAN010.chr21.haplotype1	Col	1798
