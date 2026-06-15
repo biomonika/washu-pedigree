@@ -21,6 +21,7 @@
 | `analyse_block.paternal.alt_pos.sh` | Filter de novo candidates – paternal line (template, called per chromosome) |
 | `make_stats.per_chr.py` | Compute mutation statistics per chromosome |
 | `create_chrom_map.py` | Create chromosome map visualization (per chromosome) |
+| `filter_vcf_into_easy_and_difficult.sh` | Split filtered VCFs into easy and difficult genomic regions |
 | `run_make_stats_all.sh` | Run statistics and maps for all chromosomes |
 | `vg_pos_lookup.py` | Helper: maps VCF positions to alt haplotype coordinates via vg graph |
 
@@ -56,6 +57,16 @@ VCF_PATTERN     = "PAN027.chr{chr}.project_{ref}.wave.filtered.vcf"  # adjust if
 ```python
 BLOCKS_DIR_MAT = "/path/to/maternal_transmitted_blocks_per_chr"
 BLOCKS_DIR_PAT = "/path/to/paternal_transmitted_blocks_per_chr"
+```
+
+**`filter_vcf_into_easy_and_difficult.sh`**
+```bash
+CONDA_SH="/opt/miniconda/etc/profile.d/conda.sh"        # path to conda.sh
+CONDA_ENV="/path/to/conda/env"                           # conda environment path or name
+INPUT_DIR="results_filtered_PAN027_only"                 # folder with filtered VCFs (input)
+OUTPUT_DIR="results_filtered_PAN027_only_easy_difficult" # output folder
+EASY_BED="PAN027.v1.1.easy.bed"                         # easy regions BED file
+DIFFICULT_BED="PAN027.v1.1.difficult.bed"                # difficult regions BED file
 ```
 
 **`run_make_stats_all.sh`**
@@ -129,7 +140,25 @@ Outputs per chromosome: `filtered.vcf` (after STEP 6) and `unfiltered.vcf` (afte
 
 ---
 
-### Step 3 – Statistics and visualization (`run_make_stats_all.sh`)
+### Step 3 – Easy/difficult split (`filter_vcf_into_easy_and_difficult.sh`)
+
+Splits each filtered VCF from Step 2 into two sets based on genomic region annotations:
+
+- **easy** — variants intersecting `PAN027.v1.1.easy.bed`, with overlap removed (see below)
+- **difficult** — variants intersecting `PAN027.v1.1.difficult.bed`
+
+Variants that fall in both easy and difficult regions (overlap) are assigned to **difficult only** — they are subtracted from the easy set using `bcftools isec -C`. This ensures the easy and difficult sets are mutually exclusive.
+
+Per-chromosome output (in `results_filtered_PAN027_only_easy_difficult/chr{N}_{mat|pat}/`):
+
+| File | Description |
+|------|-------------|
+| `*.easy.raw.vcf.gz` | Easy variants before overlap removal |
+| `*.easy.vcf.gz` | Easy variants after overlap removal (final) |
+| `*.difficult.vcf.gz` | Difficult variants (includes overlap) |
+---
+
+### Step 4 – Statistics and visualization (`run_make_stats_all.sh`)
 
 Runs `make_stats.per_chr.py` and `create_chrom_map.py` for every chromosome and haplotype.  
 By default reads from `results_filtered_all/`. To use a different output folder, pass it as a third argument:
