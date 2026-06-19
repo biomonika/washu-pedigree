@@ -1,7 +1,6 @@
 # Mutation Rates Analysis — PBS HPC Port
 
-**Notebooks:** `step2c_mutation_rates.ipynb`, `validate_mutation_rates.ipynb`, `diagnose_length_mismatch.ipynb`, `2b_merge_variants.ipynb`
-**CLI:** `mutation_rates_cli.py`, `preprocess_for_mutation_rates.py`
+**Notebooks:** `2b_merge_variants.ipynb`, `2c_mutation_rates.ipynb`
 
 This codebase estimates mutation rates in the **PAN027** assembly by stratifying variants across high-confidence (easy) and difficult (hard) regions, as well as assembly-specific lower-confidence regions.
 
