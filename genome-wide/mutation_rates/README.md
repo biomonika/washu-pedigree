@@ -1,9 +1,9 @@
-# Mutation Rates Analysis  
-**Notebook:** `mutation_rates.ipynb`
+# Mutation Rates Analysis — PBS HPC Port
 
-This Jupyter notebook estimates mutation rates in the **PAN027** assembly by stratifying 
-variants across high-confidence and difficult regions (based on GIAB definitions), 
-as well as assembly-specific problematic regions. 
+**Notebooks:** `step2c_mutation_rates.ipynb`, `validate_mutation_rates.ipynb`, `diagnose_length_mismatch.ipynb`, `2b_merge_variants.ipynb`
+**CLI:** `mutation_rates_cli.py`, `preprocess_for_mutation_rates.py`
+
+This codebase estimates mutation rates in the **PAN027** assembly by stratifying variants across high-confidence (easy) and difficult (hard) regions, as well as assembly-specific lower-confidence regions.
 
 ---
 
@@ -15,91 +15,118 @@ We provide conda environment for reproducibility:
 ```bash
 conda env create -f environment.yml
 ```
+
 ### 2. Install Python dependencies
 ```bash
 pip install -r requirements.txt
 ```
 
+---
+
+## Directory Layout
+
+| File | Purpose |
+|------|---------|
+| `2b_merge_variants.ipynb` | Merges per-block VCFs from switch error pipeline's step 2 into `merged_variants.vcf.gz` and creates `all_blocks.bed`. |
+| `2c_mutation_rates.ipynb` | Main mutation-rates calculation notebook. Stratifies variants by haplotype, region scope, and variant type. |
+
+---
+
 ## Required Inputs
 
-All inputs are expected to be available in the notebook’s working directory unless otherwise specified.
+All inputs are expected to be available in the working directory unless otherwise specified.
 
 ### 1. Variant data
+| File | Description |
+|------|-------------|
+| `merged_variants.vcf.gz` + `.tbi` | Merged, bgzipped, tabix-indexed variant calls from step 2. Should exclude sites from problematic grandparent or maternal regions. |
 
-    variants.vcf.gz
-Concatenated, filtered variant calls from step 2_call_variants.py of the switch_errors pipeline.
-These variants should exclude sites originating from problematic grandparent or maternal regions.
+### 2. Transmitted-block coverage
+| File | Description |
+|------|-------------|
+| `all_blocks.bed` | BED file describing all genomic regions covered by transmitted blocks in the pedigree (derived from `results.json` created in the switch_errors pipeline). |
 
-### 2. Switch-error regions annotation
+### 3. Switch-error regions annotation
+| File | Description |
+|------|-------------|
+| `sw_prone_regions.bed` | BED-formatted regions flagged as switch-error–prone by the `6_summarize.py` step of switch_errors pipeline. |
 
-    sw_prone_regions.bed
-BED-formatted regions flagged as switch-error–prone by the 6_summarize.py step of switch_errors pipeline.
+### 4. PAN027 problematic regions
+| File | Description |
+|------|-------------|
+| `flagger.PAN027.ONT.bed` | Low-confidence regions identified by Flagger (ONT data). |
+| `flagger.PAN027.hifi.bed` | Low-confidence regions identified by Flagger (HiFi data). |
+| `problematic.PAN027.bed` | Combined Low-confidence regions specific to PAN027 assembly. |
 
-### 3. PAN027 problematic regions
+### 5. Unreliable grandparental variants (optional)
+| File | Description |
+|------|-------------|
+| `problematic_grandparents.vcf.gz` + `.tbi` | Variants originating from low-confidence regions in the grandparents' assemblies.|
 
-    flagger.PAN027.ONT.bed
-    flagger.PAN027.hifi.bed
-    problematic.PAN027.bed
-
-Problematic regions specific to the PAN027 assembly, identified by flagger and nucflag
-
-### 4. Unreliable grandparental variants
-
-    problematic_grandparents.vcf.gz
-Variants originating from problematic regions in the grandparents’ assemblies.
-
-### 5. GIAB-derived stratifications (lifted to PAN027)
-
+### 6. GIAB-derived stratifications (lifted to PAN027)
 These are created by mapping GIAB CHM13 stratifications onto PAN027 haplotypes.
 
-Maternal haplotype:
-    chm13_to_PAN027_mat.easy.mapped.PAN027names.bed – easy/high-confidence regions
-    chm13_to_PAN027_mat.hard.PAN027names.bed – difficult regions (complement of easy)
+**Maternal haplotype:**
+| File | Description |
+|------|-------------|
+| `chm13_to_PAN027_mat.easy.PAN027names.bed` | Easy/high-confidence regions |
+| `chm13_to_PAN027_mat.hard.PAN027names.bed` | Difficult regions (complement of easy) |
 
-Paternal haplotype:
-    chm13_to_PAN027_pat.easy.mapped.PAN027names.bed – easy/high-confidence regions
-    chm13_to_PAN027_pat.hard.PAN027names.bed – difficult regions (complement of easy)
+**Paternal haplotype:**
+| File | Description |
+|------|-------------|
+| `chm13_to_PAN027_pat.easy.PAN027names.bed` | Easy/high-confidence regions |
+| `chm13_to_PAN027_pat.hard.PAN027names.bed` | Difficult regions (complement of easy) |
 
-GIAB source reference:
+**Global (union of maternal + paternal):**
+| File | Description |
+|------|-------------|
+| `PAN027.v1.1.easy.bed` | Union of maternal + paternal easy regions |
+| `PAN027.v1.1.difficult.bed` | Union of maternal + paternal difficult regions |
+
+**GIAB source reference:** 
 https://ftp-trace.ncbi.nlm.nih.gov/ReferenceSamples/giab/release/genome-stratifications/v3.6/CHM13@all/Union/CHM13_notinalldifficultregions.bed.gz
 
-### 6. Transmitted-block coverage
-
-    all_blocks.bed
-BED file describing all genomic regions covered by transmitted blocks in the pedigree (derived from results.json created in the switch_errors pipeline).
-
 ### 7. Padding parameter
-    PAD = 20000
+```python
+PAD = 0  # Amount of padding added to flagged/problematic PAN027 regions
+```
 
-Amount of padding added to flagged/problematic PAN027 regions
+---
 
-## Analysis Overview
+## Outputs
 
-The notebook performs the following steps:
-### 1. Load variant calls and mask unreliable regions
+| File | Description |
+|------|-------------|
+| `mutation_rates_summary.tsv` | Coarse (whole-genome) mutation rates stratified by haplotype × region × variant type. |
+| `mutation_rates_per_chromosome.tsv` | Fine (per-chromosome) mutation rates for all chromosomes. |
+| `mutation_rates_chromosomes_all.tsv` | Reshaped per-chromosome table (all regions). |
+| `mutation_rates_chromosomes_easy.tsv` | Reshaped per-chromosome table (easy regions only). |
+| `mutation_rates_chromosomes_hard.tsv` | Reshaped per-chromosome table (hard regions only). |
+| `validation_*.tsv` | Validation results comparing output TSVs against source BEDs. |
 
-Exclude variants originating from:
-        switch-error–prone regions (sw_prone_regions.bed)
-        problematic PAN027 regions (ONT/HiFi/combined)
-        unreliable grandparent regions
+---
 
-Apply padding (PAD) to problematic regions
+## Column Definitions
 
-### 2. Intersect variants with GIAB stratifications
+### Length columns
+| Column | Description |
+|--------|-------------|
+| `transmitted_length` | Total length of transmitted blocks in the given scope (unfiltered denominator). Does not exclude problematic regions. |
+| `polished_length` | Callable/non-problematic region size after filtering out switch-error–prone regions, Flagger regions, and padded problematic regions. **Used as the mutation-rate denominator.** |
+| `region_scope_len` | Alias for `polished_length` in some outputs; represents the effective callable length for the given haplotype × region combination. |
 
-Mutation counts are computed separately for:
+### Variant count columns
+| Column | Description |
+|--------|-------------|
+| `variants_count` | Raw count of variants in the given scope (before subtracting unreliable grandparent variants). |
+| `variants_count_subtracted` | Count after subtracting unreliable grandparent variants. |
+| `variants_per_Mb` | Mutation rate: `variants_count_subtracted / (polished_length / 1_000_000)`. |
 
-    maternal easy
-    maternal difficult
-    paternal easy
-    paternal difficult
+### Stratification columns
+| Column | Values | Description |
+|--------|--------|-------------|
+| `haplotype_scope` | `all`, `maternal`, `paternal` | Which haplotype's transmitted blocks are considered. |
+| `region_scope` | `all`, `easy`, `hard` | GIAB-based region stratification. |
+| `variant_type` | `all`, `SNVs`, `1bp_indels`, `>1bp_indels` | Variant type classification. Indels split by length difference: `abs(strlen(ALT)-strlen(REF))`. |
 
-Stratified mutation rates are computed by dividing counts by the callable/non-problematic region sizes in each category
-
-### 3. Adjust for transmitted-block coverage
-
-Only genomic regions covered by transmitted blocks (all_blocks.bed) are considered
-
-### 4. Summarize mutation rates
-
-The notebook reports mutation rates per (maternal regions, paternal regions, all regions) x (easy regions, difficult regions, all regions) x (SNVs, indels, all variants)
