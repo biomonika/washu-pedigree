@@ -1,5 +1,7 @@
 # HORhap analysis
 
+`./horhap.bed` includes HORhap annotations for all the chromosomes from all the assemlies
+
 ## Generate HORhap annotations
 
 HORhap annotations were generated using [horhap_tool](https://github.com/fedorrik/horhap_tool).
