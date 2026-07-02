@@ -1,8 +1,8 @@
 # ============================================================
 # USER CONFIGURATION — edit these paths before running
 # ============================================================
-CONDA_SH="/opt/miniconda/etc/profile.d/conda.sh"   # path to conda.sh
-CONDA_ENV="/private/home/mcechova/conda/ONT"         # conda environment path or name
+CONDA_SH="/path/to/conda.sh"                         # path to conda.sh
+CONDA_ENV="/path/to/conda/env"                       # conda environment path or name
 INPUT_DIR="results_filtered_PAN027_only"             # folder with filtered VCFs (input)
 OUTPUT_DIR="results_filtered_PAN027_only_easy_difficult"  # output folder
 EASY_BED="PAN027.v1.1.easy.bed"                     # easy regions BED file
@@ -38,8 +38,8 @@ for a in "${INPUT_DIR}"/*/*.filtered.vcf; do
     fi
 
     # 1. raw splits
-    bedtools intersect -header -a "$a" -b "$EASY_BED"      | bcftools sort | bgzip -c > "$easy_raw"
-    bedtools intersect -header -a "$a" -b "$DIFFICULT_BED" | bcftools sort | bgzip -c > "$diff_vcf"
+    bedtools intersect -u -header -a "$a" -b "$EASY_BED"      | bcftools sort | bgzip -c > "$easy_raw"
+    bedtools intersect -u -header -a "$a" -b "$DIFFICULT_BED" | bcftools sort | bgzip -c > "$diff_vcf"
 
     #index the raw bed files
     tabix -p vcf ${easy_raw}
