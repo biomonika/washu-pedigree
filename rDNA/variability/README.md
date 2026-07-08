@@ -6,7 +6,6 @@ These scripts assist with tasks like
 - computing per-column statistics
 - identifying conserved or variable regions
 - analyzing blocks of conservation
-- analyzing conservation of G4 sequences from alignments
 
 All scripts are written in Python and depend on **Biopython** and **pandas** (where noted).
 
@@ -131,38 +130,5 @@ python count_blocks_primary_bases.py blocks.tsv primary_bases.tsv 3
 
 - **Output**
     - TSV file with columns: `length, primary_bases`
-
-### 5. `g4_analysis.py`
-Map G4 motif coordinates from a GFF file onto a multiple sequence alignment (MSA) and compute a **conservation score** for each G4 motif.
-
-- **Features**: 
-  - Translates GFF coordinates to aligned positions in the MSA (handles gaps).  
-  - Extracts the aligned nucleotide sequence for each G4 region.  
-  - Computes the fraction of fully conserved columns (100% identity) for each G4.
-
-- **Arguments**
-  - `<aligned_fasta>` : Alignment file (output from MSA tool) in FASTA format. Should **not be trimmed** to preserve positional offsets.  
-  - `<g4_data_gff>` : GFF3 file containing predicted/found G4 features. Required fields: `seqid`, `start`, `end`, `score`, `attributes`.  
-  - `<output_tsv>` : Output TSV file path
-
-- **Dependencies**
-  - Biopython  
-  - pandas
-
-- **Notes**
-  - Coordinates in the GFF file are **1-based and inclusive**.
-  - Use **full, non-trimmed** alignments to ensure correct mapping of G4 coordinates.
-
-```bash
-# Usage
-python g4_analysis.py <aligned_fasta> <g4_data_gff> <output_tsv>
-
-# Example
-python g4_analysis.py rDNA_alignment.fasta g4_predictions.gff g4_conservation.tsv
-```
-
-- **Output**
-  - TSV file <output_tsv> with columns `seqid, start, end, score, attributes, sequence_from_alignment, conserved(%)`
-
 
 
