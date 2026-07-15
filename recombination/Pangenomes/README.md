@@ -31,6 +31,9 @@ The pipeline has three stages:
 ```
 pangenomes/
 ├── README.md               # this file
+├── breakpoints/            # final PAN027 breakpoint calls
+│   ├── PAN027_maternal.breakpoints.tsv
+│   └── PAN027_paternal.breakpoints.tsv
 ├── config/
 │   ├── PAN027_final_params.json    # exact pipeline config used
 │   ├── PARAMS_SUMMARY.md           # concise one-file parameter summary
@@ -41,6 +44,8 @@ pangenomes/
 │   ├── switch_coordinates_aproximation.py # bracket + bisection core
 │   └── plot_pangenome_karyogram.py        # karyogram of a run
 └── figures/                # example outputs
+
+
 ```
 
 ## Install
@@ -114,7 +119,7 @@ odgi untangle -i graph/chr1/chr1.final.og \
      -R target_paths.txt -Q query_paths.txt \
      -t 4 --merge-dist 50000 > untangle/PAN027_hap1_vs_PAN010.bed
 
-# 3. Parse untangle output into switches
+# 3. Parse untangle ut into switches
 python3 scripts/parse_untangle.py \
      --bed  untangle/PAN027_hap1_vs_PAN010.bed \
      --child-id PAN027 --parent-id PAN010 --hap hap1 \
@@ -141,18 +146,46 @@ Repeat steps 2–4 for the paternal branch (`hap2` vs the father).
 
 ## Output format
 
-Refined breakpoint TSV columns:
+`breakpoints/PAN027_{maternal,paternal}.breakpoints.tsv` columns:
 
 | Column | Meaning |
 | --- | --- |
-| `tag` | e.g. `PAN027_hap1` |
 | `chr` | `chr1`, `chr2`, … |
-| `bp_est_0based`, `bp_est_1based` | best point estimate |
-| `bp_lo`, `bp_hi` | convergence interval (uncertainty bounds) |
-| `iters` | iterations used |
+| `bp_est_1based` | best point estimate of the crossover (1-based) |
+| `bp_lo`, `bp_hi` | uncertainty interval (bisection convergence bounds) |
 | `conf` | probe-agreement confidence at convergence |
-| `left_exp`, `right_exp` | flanking haplotypes (`MATERNAL` / `PATERNAL`) |
-| `status` | `OK` (< 1 kb interval), `ACTIVE` (still open), `LIKELY_FP` (no switch), `EMPTY_PROBE` (telomere-clamped) |
+| `left_hap`, `right_hap` | flanking parental haplotypes (`hap1` / `hap2`) |
+| `status` | see below |
+
 
 Rows with `status ∈ {LIKELY_FP, EMPTY_PROBE}` are dropped for downstream
 analysis.
+
+### `status` values
+
+| Status | Meaning | Use |
+| --- | --- | --- |
+| `OK` | Bisection converged to a ≤ 1 kb interval — a well-localized breakpoint. | **valid** |
+| `ACTIVE` | A real breakpoint whose interval did not fully close to 1 kb within the iteration budget (e.g. sparse discriminating variants), but the switch is confirmed and localized to a few kb. | **valid** |
+| `LIKELY_FP` | Edge bracketing never found a HAP1↔HAP2 transition anywhere in the search span — no crossover exists in the window, so the raw call was a false positive (graph ambiguity in a repeat). | dropped |
+| `EMPTY_PROBE` | The candidate sits so close to a chromosome end that the clamped probe collapses below the minimum length and cannot be aligned — the breakpoint cannot be validated (see Limitations). | dropped |
+
+Valid breakpoints are those with `status ∈ {OK, ACTIVE}`.
+
+
+## Limitations
+
+- **Breakpoints very close to a telomere cannot be validated.** The refinement
+  places a probe on each side of the candidate to check which parental
+  haplotype it matches. Within roughly a probe-minimum length (~500 bp to a
+  few kb) of a chromosome end there is not enough sequence on the outer side to
+  extract a probe, so such candidates are flagged `EMPTY_PROBE` and dropped.
+  Because paternal crossovers are biologically enriched near telomeres, this can
+  under-represent the most telomere-proximal paternal breakpoints.
+- **Chromosome-scoped graphs.** Graphs are built per chromosome, so chrX↔chrY
+  pseudoautosomal recombination is not detectable in the default run; a combined
+  chrX+chrY graph is needed for the PAR.
+- **Doublet artifacts.** The graph occasionally emits two calls a few kb apart
+  (a switch and an immediate switch-back); consecutive calls < ~200 kb apart on
+  the same haplotype should be treated as a single crossover.
+
