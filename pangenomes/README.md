@@ -204,7 +204,7 @@ Runs `make_stats.per_chr.py` and `create_chrom_map.py` for every chromosome and 
 
 When `TYPE=.` or `LEN=0`, values are derived from REF/ALT sequence lengths.
 
-> **Note on insertion/deletion direction:** Labels follow the **evolutionary direction** (grandparent → mother). An `Indel_Insertion` means a sequence was inserted in the mother relative to the grandparent. An `Indel_Deletion` means a sequence was deleted in the mother relative to the grandparent.
+> **Note on insertion/deletion direction:** Labels **does not** follow the **evolutionary direction** (grandparent → mother). An `Indel_Insertion` means a sequence was inserted in the mother relative to the grandparent. An `Indel_Deletion` means a sequence was deleted in the mother relative to the grandparent.
 
 ---
 
