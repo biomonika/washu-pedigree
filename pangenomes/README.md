@@ -242,3 +242,9 @@ results_final_filter_mother_gp_easy_difficult/
 - `bedtools`
 - `bgzip`, `tabix`
 - Python 3 with: `pandas`, `matplotlib`
+
+---
+
+## Available Results in this Repo
+
+The [`results_final_filter_mother_gp_easy_difficult/`](results_final_filter_mother_gp_easy_difficult/) folder in this directory contains the **actual final results used in the *Complete genomes of a multi-generational pedigree to expand studies of genetic and epigenetic inheritance* paper** — not just an example structure. It includes the easy/difficult-split VCFs for all chromosomes and both haplotypes (maternal/paternal).
