@@ -1,6 +1,6 @@
 # washu-pedigree
 
-This repository accompanies the paper "Complete genomes of a multi-generational pedigree to expand studies of genetic and epigenetic inheritance". 
+This repository accompanies the paper "Complete genomes of a multi-generational pedigree to expand studies of genetic and epigenetic inheritance". In the section below, you will find the information about the download of the sequencing data and the individual assemblies. The assembly annotations can be downloaded from: https://public.gi.ucsc.edu/~mcechova/pedigree/annotations/
 
 **SRP320775**
 
